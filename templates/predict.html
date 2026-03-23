@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}Predict Tax – Employee Tax Prediction{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="text-center mb-5">
+    <div class="display-4 mb-2">🧮</div>
+    <h1 class="fw-bold">Tax Prediction</h1>
+    <p class="text-muted lead">Enter your financial details and let AI calculate your tax</p>
+    {% if is_skip %}
+    <div class="alert {% if limit_reached %}alert-danger{% else %}alert-warning{% endif %} d-inline-block shadow-sm">
+      {% if limit_reached %}
+        🚫 You've used all <strong>3 free predictions</strong>.
+        <a href="{{ url_for('register') }}" class="alert-link">Create a free account</a> for unlimited predictions.
+      {% else %}
+        ⚡ Guest Mode: <strong>{{ skip_remaining }}</strong> free prediction{{ 's' if skip_remaining != 1 }} remaining.
+        <a href="{{ url_for('register') }}" class="alert-link">Sign up</a> for unlimited access + history.
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if not limit_reached %}
+  <div class="row g-4 justify-content-center">
+    <!-- Form Section -->
+    <div class="col-lg-7">
+      <div class="card shadow border-0 rounded-4 h-100">
+        <div class="card-body p-4 p-md-5">
+          <form method="POST" action="{{ url_for('predict') }}" id="predict-form" novalidate>
+            
+            <div class="row g-4">
+              <!-- Annual Salary -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="annual_salary">
+                  Annual Salary (₹)
+                  <small class="d-block text-muted fw-normal">Gross salary for the year</small>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light text-muted border-end-0">💼</span>
+                  <input type="number" name="annual_salary" id="annual_salary" class="form-control border-start-0" placeholder="e.g. 800000" min="0" required>
+                </div>
+                <div class="invalid-feedback">Please enter your total salary.</div>
+              </div>
+
+              <!-- Other Income -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="other_income">
+                  Other Income (₹)
+                  <small class="d-block text-muted fw-normal">Freelance, rental, interest</small>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light text-muted border-end-0">💰</span>
+                  <input type="number" name="other_income" id="other_income" class="form-control border-start-0" placeholder="e.g. 50000" min="0" value="0">
+                </div>
+              </div>
+
+              <!-- Investments (80C) -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="investments">
+                  Investments – 80C (₹)
+                  <small class="d-block text-muted fw-normal">PPF, ELSS, etc. (max 1.5L)</small>
+                </label>
+                <div class="input-group mb-2">
+                  <span class="input-group-text bg-light text-muted border-end-0">📊</span>
+                  <input type="number" name="investments" id="investments" class="form-control border-start-0" placeholder="e.g. 150000" min="0" max="150000" value="0">
+                </div>
+                <input type="range" class="form-range" id="inv-range" min="0" max="150000" value="0" step="5000">
+              </div>
+
+              <!-- Other Deductions -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="deductions">
+                  Other Deductions (₹)
+                  <small class="d-block text-muted fw-normal">80D, HRA, Home Loan</small>
+                </label>
+                <div class="input-group mb-2">
+                  <span class="input-group-text bg-light text-muted border-end-0">🏷️</span>
+                  <input type="number" name="deductions" id="deductions" class="form-control border-start-0" placeholder="e.g. 25000" min="0" value="0">
+                </div>
+              </div>
+
+              <!-- Age -->
+              <div class="col-12">
+                <label class="form-label fw-semibold" for="age">
+                  Age (years)
+                  <small class="d-block text-muted fw-normal">Affects senior citizen tax slabs</small>
+                </label>
+                <div class="input-group mb-2" style="max-width: 200px;">
+                  <span class="input-group-text bg-light text-muted border-end-0">👤</span>
+                  <input type="number" name="age" id="age" class="form-control border-start-0" placeholder="e.g. 30" min="18" max="100" value="30" required>
+                </div>
+                <input type="range" class="form-range" id="age-range" min="18" max="100" value="30">
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-3 mt-4 rounded-pill shadow-sm fs-5" id="predict-btn">
+              <span class="btn-text">🔮 Predict My Tax</span>
+              <span class="spinner-border spinner-border-sm d-none" id="btn-loader" role="status" aria-hidden="true"></span>
+              <span class="ms-2 d-none" id="btn-loader-text">Calculating...</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Summary Section -->
+    <div class="col-lg-4">
+      <div class="card bg-dark text-white shadow border-0 rounded-4 h-100">
+        <div class="card-body p-4 p-md-5 d-flex flex-column justify-content-center">
+          <h4 class="fw-bold mb-4 text-center">Live Estimate</h4>
+          
+          <div class="d-flex justify-content-between mb-3 border-bottom border-secondary pb-2">
+            <span class="text-white-50">Gross Income</span>
+            <span class="fw-semibold" id="ls-gross">₹0</span>
+          </div>
+          
+          <div class="d-flex justify-content-between mb-3 border-bottom border-secondary pb-2">
+            <span class="text-white-50">Total Deductions</span>
+            <span class="text-danger fw-semibold" id="ls-deduct">- ₹50,000</span>
+          </div>
+          
+          <div class="d-flex justify-content-between mb-4 border-bottom border-secondary pb-2">
+            <span class="text-white-50">Est. Taxable Income</span>
+            <span class="fw-bold" id="ls-taxable">₹0</span>
+          </div>
+          
+          <div class="bg-primary text-white p-3 rounded-3 text-center mb-4 shadow-sm">
+            <div class="small fw-semibold mb-1 opacity-75">Est. Tax (Slab)</div>
+            <div class="fs-2 fw-bold" id="ls-tax">₹0</div>
+          </div>
+          
+          <div class="small text-white-50">
+            <p class="fw-semibold text-white mb-2">📋 Tax Slabs Applied:</p>
+            <ul class="list-unstyled mb-0 ms-2">
+              <li>≤₹2.5L <span class="float-end">0%</span></li>
+              <li>₹2.5L–₹5L <span class="float-end">5%</span></li>
+              <li>₹5L–₹10L <span class="float-end">20%</span></li>
+              <li>&gt;₹10L <span class="float-end">30%</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <!-- Limit Reached Card -->
+  <div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+      <div class="card shadow border-0 rounded-4 p-5">
+        <div class="display-3 mb-3">🔒</div>
+        <h2 class="fw-bold">Prediction Limit Reached</h2>
+        <p class="text-muted mb-4">You've used all 3 guest predictions. Create a free account to get unlimited predictions, history tracking, and personalized suggestions.</p>
+        <div class="d-flex gap-3 justify-content-center">
+          <a href="{{ url_for('register') }}" class="btn btn-primary rounded-pill px-4 fw-bold">Create Free Account</a>
+          <a href="{{ url_for('login') }}" class="btn btn-outline-dark rounded-pill px-4 fw-bold">Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function() {
+    function computeSlabTax(taxable) {
+      if (taxable <= 250000)  return 0;
+      if (taxable <= 500000)  return (taxable - 250000) * 0.05;
+      if (taxable <= 1000000) return 12500 + (taxable - 500000) * 0.20;
+      return 112500 + (taxable - 1000000) * 0.30;
+    }
+
+    function updateSummary() {
+      const salary  = parseFloat($('#annual_salary').val()) || 0;
+      const other   = parseFloat($('#other_income').val())  || 0;
+      const inv     = parseFloat($('#investments').val())   || 0;
+      const ded     = parseFloat($('#deductions').val())    || 0;
+      
+      const gross   = salary + other;
+      const totalD  = inv + ded + 50000; // ₹50,000 standard deduction
+      const taxable = Math.max(0, gross - totalD);
+      const estTax  = computeSlabTax(taxable);
+      
+      $('#ls-gross').text('₹' + gross.toLocaleString('en-IN'));
+      $('#ls-deduct').text('- ₹' + totalD.toLocaleString('en-IN'));
+      $('#ls-taxable').text('₹' + taxable.toLocaleString('en-IN'));
+      $('#ls-tax').text('₹' + Math.round(estTax).toLocaleString('en-IN'));
+    }
+
+    // Sync ranges and inputs
+    $('#inv-range').on('input', function() {
+      $('#investments').val($(this).val());
+      updateSummary();
+    });
+    
+    $('#investments').on('input', function() {
+      $('#inv-range').val($(this).val());
+      updateSummary();
+    });
+
+    $('#age-range').on('input', function() {
+      $('#age').val($(this).val());
+    });
+    
+    $('#age').on('input', function() {
+      $('#age-range').val($(this).val());
+    });
+
+    // Update summary on any input change
+    $('#predict-form input').on('input', updateSummary);
+    updateSummary();
+
+    // Form Validation and Submit loading state
+    $('#predict-form').on('submit', function(e) {
+      const salary = $('#annual_salary').val();
+      if (!salary || salary <= 0) {
+        e.preventDefault();
+        $('#annual_salary').addClass('is-invalid');
+        return;
+      }
+      $('#annual_salary').removeClass('is-invalid');
+      
+      $('#predict-btn').prop('disabled', true);
+      $('.btn-text').addClass('d-none');
+      $('#btn-loader, #btn-loader-text').removeClass('d-none');
+    });
+  });
+</script>
+{% endblock %}

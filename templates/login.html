@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Login – Employee Tax Prediction{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center mb-5" style="min-height: 70vh;">
+  <div class="card shadow border-0 rounded-4" style="max-width: 900px; width: 100%;">
+    <div class="row g-0">
+      
+      <!-- Left Side Info Panel -->
+      <div class="col-md-5 bg-primary text-white p-5 d-none d-md-flex flex-column justify-content-center rounded-start-4">
+        <span class="badge bg-light text-primary mb-3 align-self-start py-2 px-3 rounded-pill shadow-sm">Student Powered</span>
+        <h2 class="fw-bold mb-4">Smart Tax<br>Predictions</h2>
+        <p class="mb-4 text-white-50">Our machine learning model uses Indian tax slab rules to predict your tax liability instantly.</p>
+        <ul class="list-unstyled">
+          <li class="mb-3"><span class="me-2">✅</span> Accurate ML predictions</li>
+          <li class="mb-3"><span class="me-2">💡</span> Tax saving suggestions</li>
+          <li class="mb-3"><span class="me-2">📜</span> Prediction history</li>
+          <li class="mb-3"><span class="me-2">📊</span> Beautiful visual charts</li>
+          <li class="mb-3"><span class="me-2">🆓</span> 100% free to use</li>
+        </ul>
+      </div>
+
+      <!-- Right Side Auth Panel -->
+      <div class="col-md-7 p-4 p-md-5 bg-white rounded-end-4">
+        <!-- Tabs -->
+        <ul class="nav nav-pills nav-justified mb-4" id="authTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="login-tab" data-bs-toggle="pill" data-bs-target="#login-panel" type="button" role="tab">Login</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="signup-tab" data-bs-toggle="pill" data-bs-target="#signup-panel" type="button" role="tab">Sign Up</button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="authTabsContent">
+          <!-- LOGIN PANEL -->
+          <div class="tab-pane fade show active" id="login-panel" role="tabpanel">
+            <div class="text-center mb-4">
+              <h3 class="fw-bold">Welcome Back 🔐</h3>
+              <p class="text-muted">Sign in to access your tax dashboard</p>
+            </div>
+            <form method="POST" action="{{ url_for('login') }}" id="login-form" novalidate>
+              <div class="mb-3 form-group">
+                <label class="form-label fw-semibold">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">📧</span>
+                  <input type="email" name="email" id="login-email" class="form-control border-start-0" placeholder="you@example.com" value="{{ email or '' }}" required>
+                </div>
+                <div class="invalid-feedback" id="err-login-email">Please enter a valid email.</div>
+              </div>
+              <div class="mb-4 form-group">
+                <label class="form-label fw-semibold">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">🔑</span>
+                  <input type="password" name="password" id="login-password" class="form-control border-start-0 border-end-0" placeholder="Enter your password" required>
+                  <button class="btn btn-outline-secondary border-start-0 toggle-pw" type="button" data-target="login-password">👁</button>
+                </div>
+                <div class="invalid-feedback" id="err-login-pw">Password is required.</div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mb-3 shadow-sm rounded-pill btn-lg">Login →</button>
+            </form>
+            <div class="text-center mb-3 text-muted">or</div>
+            <a href="{{ url_for('skip') }}" class="btn btn-outline-dark w-100 fw-bold py-2 mb-3 rounded-pill">
+              ⚡ Skip for now <small class="fw-normal">(3 free predictions)</small>
+            </a>
+          </div>
+
+          <!-- SIGN UP PANEL -->
+          <div class="tab-pane fade" id="signup-panel" role="tabpanel">
+            <div class="text-center mb-4">
+              <h3 class="fw-bold">Create Account 🚀</h3>
+              <p class="text-muted">Start predicting taxes in seconds</p>
+            </div>
+            <form method="POST" action="{{ url_for('register') }}" id="signup-form" novalidate>
+              <div class="mb-3 form-group">
+                <label class="form-label fw-semibold">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">📧</span>
+                  <input type="email" name="email" id="signup-email" class="form-control border-start-0" placeholder="you@example.com" value="{{ email or '' }}" required>
+                </div>
+                <div class="invalid-feedback" id="err-signup-email">Please enter a valid email.</div>
+              </div>
+              <div class="mb-3 form-group">
+                <label class="form-label fw-semibold">Password <small class="text-muted fw-normal">(min. 6 chars)</small></label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">🔑</span>
+                  <input type="password" name="password" id="signup-password" class="form-control border-start-0 border-end-0" placeholder="Create a strong password" required>
+                  <button class="btn btn-outline-secondary border-start-0 toggle-pw" type="button" data-target="signup-password">👁</button>
+                </div>
+                <div class="progress mt-2" style="height: 5px;">
+                  <div class="progress-bar" id="pw-bar" role="progressbar" style="width: 0%;"></div>
+                </div>
+                <small id="pw-label" class="form-text text-muted"></small>
+                <div class="invalid-feedback" id="err-signup-pw">Password must be at least 6 characters.</div>
+              </div>
+              <div class="mb-4 form-group">
+                <label class="form-label fw-semibold">Confirm Password</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-end-0">🔒</span>
+                  <input type="password" name="confirm_password" id="confirm-password" class="form-control border-start-0" placeholder="Re-enter your password" required>
+                </div>
+                <div class="invalid-feedback" id="err-confirm-pw">Passwords do not match.</div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 fw-bold py-2 rounded-pill btn-lg shadow-sm">Create Account →</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  $(document).ready(function() {
+    {% if request.args.get('tab') == 'signup' or request.endpoint == 'register' or (request.referrer and 'register' in (request.referrer or '')) %}
+      var triggerEl = document.querySelector('#signup-tab');
+      var tab = new bootstrap.Tab(triggerEl);
+      tab.show();
+    {% endif %}
+
+    // Toggle Password Visibility
+    $('.toggle-pw').on('click', function() {
+      const targetId = $(this).data('target');
+      const input = $('#' + targetId);
+      if (input.attr('type') === 'password') {
+        input.attr('type', 'text');
+        $(this).text('🙈');
+      } else {
+        input.attr('type', 'password');
+        $(this).text('👁');
+      }
+    });
+
+    // Client-side validations
+    $('#login-form').on('submit', function(e) {
+      let valid = true;
+      const email = $('#login-email').val();
+      const pw = $('#login-password').val();
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        $('#login-email').siblings('.invalid-feedback').show();
+        valid = false;
+      } else {
+        $('#login-email').siblings('.invalid-feedback').hide();
+      }
+
+      if (!pw) {
+        $('#login-password').parent().siblings('.invalid-feedback').show();
+        valid = false;
+      } else {
+        $('#login-password').parent().siblings('.invalid-feedback').hide();
+      }
+
+      if (!valid) {
+        e.preventDefault();
+        // UI effect
+        $(this).fadeOut(100).fadeIn(100);
+      }
+    });
+
+    $('#signup-form').on('submit', function(e) {
+      let valid = true;
+      const email = $('#signup-email').val();
+      const pw = $('#signup-password').val();
+      const cpw = $('#confirm-password').val();
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        $('#signup-email').siblings('.invalid-feedback').show();
+        valid = false;
+      } else {
+        $('#signup-email').siblings('.invalid-feedback').hide();
+      }
+
+      if (!pw || pw.length < 6) {
+        $('#signup-password').parent().siblings('.invalid-feedback').show();
+        valid = false;
+      } else {
+        $('#signup-password').parent().siblings('.invalid-feedback').hide();
+      }
+
+      if (pw !== cpw || !cpw) {
+        $('#confirm-password').siblings('.invalid-feedback').show();
+        valid = false;
+      } else {
+        $('#confirm-password').siblings('.invalid-feedback').hide();
+      }
+
+      if (!valid) {
+        e.preventDefault();
+        $(this).fadeOut(100).fadeIn(100);
+      }
+    });
+
+    // Password strength check
+    $('#signup-password').on('input', function() {
+      const val = $(this).val();
+      const bar = $('#pw-bar');
+      const label = $('#pw-label');
+      
+      if (val.length === 0) {
+        bar.css('width', '0%').attr('class', 'progress-bar');
+        label.text('');
+      } else if (val.length < 6) {
+        bar.css('width', '30%').attr('class', 'progress-bar bg-danger');
+        label.text('Weak').removeClass().addClass('form-text text-danger fw-bold');
+      } else if (val.length < 10) {
+        bar.css('width', '60%').attr('class', 'progress-bar bg-warning');
+        label.text('Fair').removeClass().addClass('form-text text-warning fw-bold');
+      } else {
+        bar.css('width', '100%').attr('class', 'progress-bar bg-success');
+        label.text('Strong').removeClass().addClass('form-text text-success fw-bold');
+      }
+    });
+  });
+</script>
+{% endblock %}
