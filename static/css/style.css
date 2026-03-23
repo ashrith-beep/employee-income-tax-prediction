@@ -1,0 +1,30 @@
+/* style.css - minimal stylesheet for Employee Tax Prediction project */
+
+/* ── Google Font ────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* ── Custom Utilities ───────────────────────────────────── */
+.custom-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.custom-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #0d6efd, #6610f2);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #0d6efd, #6610f2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
