@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Prediction History – Employee Tax Prediction{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="text-center mb-5">
+    <div class="display-4 mb-2">📋</div>
+    <h1 class="fw-bold">Prediction History</h1>
+    <p class="text-muted lead">All your past tax predictions in one place</p>
+  </div>
+
+  {% if records %}
+  <div class="card shadow-sm border-0 rounded-4 mb-5">
+    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-primary">{{ records | length }} prediction{{ 's' if records | length != 1 }}</h5>
+      <a href="{{ url_for('predict') }}" class="btn btn-sm btn-primary rounded-pill fw-bold shadow-sm">+ New</a>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-borderless align-middle mb-0">
+          <thead class="table-light text-muted small text-uppercase">
+            <tr>
+              <th class="ps-4">#</th>
+              <th>Date</th>
+              <th>Salary</th>
+              <th>Other Inc.</th>
+              <th>Inv. (80C)</th>
+              <th>Ded.</th>
+              <th>Age</th>
+              <th class="text-end">Tax</th>
+              <th class="text-center pe-4">Eff. Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+            {% set gross = r.annual_salary + r.other_income %}
+            {% set eff = (r.predicted_tax / gross * 100) if gross > 0 else 0 %}
+            <tr class="border-bottom">
+              <td class="ps-4 text-muted fw-bold">{{ loop.index }}</td>
+              <td class="small">{{ r.created_at[:16] }}</td>
+              <td>₹{{ "{:,.0f}".format(r.annual_salary) }}</td>
+              <td>₹{{ "{:,.0f}".format(r.other_income) }}</td>
+              <td>₹{{ "{:,.0f}".format(r.investments) }}</td>
+              <td>₹{{ "{:,.0f}".format(r.deductions) }}</td>
+              <td>{{ r.age }}</td>
+              <td class="text-end fw-bold font-monospace bg-light rounded-2 my-1 me-2 d-inline-block px-2">₹{{ "{:,.0f}".format(r.predicted_tax) }}</td>
+              <td class="text-center pe-4">
+                <span class="badge rounded-pill {% if eff > 20 %}bg-danger{% elif eff > 10 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                  {{ "%.1f"|format(eff) }}%
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trend Chart -->
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4 p-md-5">
+      <h4 class="card-title fw-bold mb-4 text-center">📈 Salary vs Tax Trend</h4>
+      <div style="height: 350px;">
+        <canvas id="historyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="row justify-content-center">
+    <div class="col-md-6 text-center">
+      <div class="card shadow-sm border-0 rounded-4 p-5">
+        <div class="display-3 mb-3 text-muted">🔍</div>
+        <h2 class="fw-bold">No predictions yet</h2>
+        <p class="text-muted mb-4">Make your first prediction to see it tracked here.</p>
+        <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow-sm">Make a Prediction</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if records %}
+<script>
+  const salaries = [{% for r in records|reverse %}{{ r.annual_salary }},{% endfor %}];
+  const taxes    = [{% for r in records|reverse %}{{ r.predicted_tax }},{% endfor %}];
+  const labels   = [{% for r in records|reverse %}'#{{ loop.index }}',{% endfor %}];
+
+  const ctx2 = document.getElementById('historyChart').getContext('2d');
+  new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Annual Salary (₹)',
+          data: salaries,
+          borderColor: 'rgba(13, 110, 253, 1)',
+          backgroundColor: 'rgba(13, 110, 253, 0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+        },
+        {
+          label: 'Predicted Tax (₹)',
+          data: taxes,
+          borderColor: 'rgba(220, 53, 69, 1)',
+          backgroundColor: 'rgba(220, 53, 69, 0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        tooltip: { callbacks: { label: ctx => '₹' + ctx.parsed.y.toLocaleString('en-IN') }}
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}
